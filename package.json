@@ -1,0 +1,38 @@
+{
+  "name": "brevo-checker",
+  "version": "0.0.1",
+  "description": "An email and SMS limit checker and notifier for Brevo",
+  "keywords": [
+    "brevo",
+    "email",
+    "sms",
+    "limits",
+    "notifications"
+  ],
+  "homepage": "https://github.com/jsilvanus/brevo-checker#readme",
+  "bugs": {
+    "url": "https://github.com/jsilvanus/brevo-checker/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jsilvanus/brevo-checker.git"
+  },
+  "license": "ISC",
+  "author": "Juha Itäleino <jsilvanus@gmail.com>",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "check": "node src/checkQuota.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@getbrevo/brevo": "^5.0.4"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3"
+  }
+}
