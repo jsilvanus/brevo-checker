@@ -1,6 +1,6 @@
 import fs from 'fs/promises'
 import dotenv from 'dotenv'
-import { getByPath, findNumeric, computeShouldAlert, chooseMetric } from './lib.js'
+import { getByPath, findNumeric, computeShouldAlert, chooseMetric, readLastAlert, writeLastAlert } from './lib.js'
 
 dotenv.config()
 
@@ -28,18 +28,7 @@ async function fetchJson(url) {
   return res.json()
 }
 
-async function readLastAlert() {
-  try {
-    const data = await fs.readFile(LAST_ALERT_FILE, 'utf8')
-    return JSON.parse(data)
-  } catch {
-    return {}
-  }
-}
-
-async function writeLastAlert(obj) {
-  await fs.writeFile(LAST_ALERT_FILE, JSON.stringify(obj, null, 2), 'utf8')
-}
+/* readLastAlert / writeLastAlert moved to src/lib.js */
 
 async function sendEmail(to, subject, html) {
   const payload = {
@@ -97,7 +86,7 @@ async function sendEmail(to, subject, html) {
       process.exit(0)
     }
     const subject = `Brevo quota alert: ${metricKey}=${metricVal}`
-    const html = `<p>Brevo quota threshold reached.</p><p>${metricKey}: ${metricVal}</p><pre>${JSON.stringify(account, null, 2)}</pre>`
+    const html = `<p>Brevo quota threshold reached.</p><p>${metricKey}: ${metricVal}</p><pre>${JSON.stringify(account)}</pre>`
     if (!BREVO_API_KEY) {
       console.log('DRY-RUN: would send email to', ALERT_EMAIL)
       console.log('Subject:', subject)
