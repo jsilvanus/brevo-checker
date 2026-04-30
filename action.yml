@@ -20,6 +20,19 @@ inputs:
     description: 'Optional JSON path to numeric metric in account response'
     required: false
   local_metric_file:
+      warning_percent:
+        description: 'Usage percent to trigger warning (e.g. 70)'
+        required: false
+      critical_percent:
+        description: 'Usage percent to trigger critical (e.g. 85)'
+        required: false
+      emergency_percent:
+        description: 'Usage percent to trigger emergency (e.g. 95)'
+        required: false
+      state_file:
+        description: 'Path to persistent alert state file (written in workspace)'
+        required: false
+        default: '.alert-state.json'
     description: 'Local file path for testing (not for production)'
     required: false
 
