@@ -1,0 +1,28 @@
+name: Brevo quota checker
+description: Checks Brevo quotas and sends alert emails when thresholds are reached.
+author: jsilvanus
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+
+inputs:
+  config_path:
+    description: 'Path to config file in the caller repo'
+    required: false
+    default: '.github/brevo-checker.json'
+  brevo_api_key:
+    description: 'Brevo API key (use with secrets.BREVO_NOTIFY_API_KEY)'
+    required: false
+  alert_email:
+    description: 'Recipient email for alerts'
+    required: false
+  metric_json_path:
+    description: 'Optional JSON path to numeric metric in account response'
+    required: false
+  local_metric_file:
+    description: 'Local file path for testing (not for production)'
+    required: false
+
+outputs:
+  status:
+    description: 'ok | alert | suppressed | error'

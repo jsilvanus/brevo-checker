@@ -30,75 +30,33 @@ async function fetchJson(url) {
 
 /* readLastAlert / writeLastAlert moved to src/lib.js */
 
-async function sendEmail(to, subject, html) {
-  const payload = {
-    sender: { name: 'Brevo Checker', email: FROM_EMAIL },
-    to: [{ email: to }],
-    subject,
-    htmlContent: html
-  }
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', accept: 'application/json', 'api-key': BREVO_API_KEY },
-    body: JSON.stringify(payload)
-  })
-  if (!res.ok) {
-    const t = await res.text()
-    throw new Error(`Send email failed ${res.status}: ${t}`)
-  }
-  return res.json()
+import dotenv from 'dotenv'
+import runCheck from './checker.js'
+
+dotenv.config()
+
+const opts = {
+  brevoApiKey: process.env.BREVO_API_KEY,
+  alertEmail: process.env.ALERT_EMAIL,
+  fromEmail: process.env.FROM_EMAIL || 'brevo-checker@example.com',
+  thresholdPercent: process.env.ALERT_THRESHOLD_PERCENT ? Number(process.env.ALERT_THRESHOLD_PERCENT) : null,
+  thresholdRemaining: process.env.ALERT_THRESHOLD_REMAINING ? Number(process.env.ALERT_THRESHOLD_REMAINING) : null,
+  metricJsonPath: process.env.METRIC_JSON_PATH || '',
+  cooldownHours: process.env.ALERT_COOLDOWN_HOURS ? Number(process.env.ALERT_COOLDOWN_HOURS) : 24,
+  localMetricFile: process.env.LOCAL_METRIC_FILE || '',
+  lastAlertFile: process.env.LAST_ALERT_FILE || '.brevo-checker-last-alert.json'
 }
 
 (async function main() {
   try {
-    let account
-    if (LOCAL_METRIC_FILE) {
-      const raw = await fs.readFile(LOCAL_METRIC_FILE, 'utf8')
-      account = JSON.parse(raw)
-    } else {
-      account = await fetchJson('https://api.brevo.com/v3/account')
-    }
-
-    const chosen = chooseMetric(account, METRIC_JSON_PATH)
-    if (chosen.error) {
-      console.error('Metric selection error:', chosen.error)
-      if (chosen.value) console.error(JSON.stringify(chosen.value, null, 2))
-      process.exit(2)
-    }
-    const { metricVal, metricKey, parent } = chosen
-    const evalRes = computeShouldAlert(metricVal, parent, { thresholdPercent: ALERT_THRESHOLD_PERCENT, thresholdRemaining: ALERT_THRESHOLD_REMAINING })
-    if (evalRes.error) {
-      console.error('Threshold evaluation error:', evalRes.error)
-      process.exit(2)
-    }
-    if (!evalRes.shouldAlert) {
-      console.log('OK: metric', metricKey, metricVal, evalRes)
-      process.exit(0)
-    }
-
-    const last = await readLastAlert()
-    const key = ALERT_EMAIL || '_default'
-    const now = Date.now()
-    const prev = last[key] || 0
-    const cooldownMs = ALERT_COOLDOWN_HOURS * 3600 * 1000
-    if (now - prev < cooldownMs) {
-      console.log('Alert suppressed due to cooldown')
-      process.exit(0)
-    }
-    const subject = `Brevo quota alert: ${metricKey}=${metricVal}`
-    const html = `<p>Brevo quota threshold reached.</p><p>${metricKey}: ${metricVal}</p><pre>${JSON.stringify(account)}</pre>`
-    if (!BREVO_API_KEY) {
-      console.log('DRY-RUN: would send email to', ALERT_EMAIL)
-      console.log('Subject:', subject)
-    } else {
-      await sendEmail(ALERT_EMAIL, subject, html)
-    }
-    last[key] = now
-    await writeLastAlert(last)
-    console.log('Alert sent')
-    process.exit(0)
+    const res = await runCheck(opts)
+    if (res.status === 'ok') process.exit(0)
+    if (res.status === 'suppressed') process.exit(0)
+    if (res.status === 'alert') process.exit(0)
+    process.exit(2)
   } catch (err) {
     console.error('Error:', err.message || err)
     process.exit(2)
   }
 })()
+    const chosen = chooseMetric(account, METRIC_JSON_PATH)

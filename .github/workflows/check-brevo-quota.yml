@@ -16,6 +16,6 @@ jobs:
       - run: npm ci
       - run: npm run check
         env:
-          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          BREVO_NOTIFY_API_KEY: ${{ secrets.BREVO_NOTIFY_API_KEY }}
           ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}

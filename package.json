@@ -30,7 +30,8 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@getbrevo/brevo": "^5.0.4"
+    "@getbrevo/brevo": "^5.0.4",
+    "@actions/core": "^1.10.0"
   },
   "devDependencies": {
     "dotenv": "^16.0.3"
