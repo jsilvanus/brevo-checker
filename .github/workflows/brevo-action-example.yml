@@ -1,0 +1,43 @@
+name: Example: use Brevo quota checker action
+
+on:
+  schedule:
+    - cron: '0 * * * *' # hourly
+  workflow_dispatch: {}
+
+jobs:
+  check-quota:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Brevo quota decision action
+        id: check
+        uses: ./
+        with:
+          brevo_api_key: ${{ secrets.BREVO_NOTIFY_API_KEY }}
+          warning_percent: 70
+          critical_percent: 85
+          emergency_percent: 95
+          state_file: .github/brevo-alert-state.json
+
+      - name: Show outputs
+        run: |
+          echo "usagePercent=${{ steps.check.outputs.usagePercent }}"
+          echo "remainingEmails=${{ steps.check.outputs.remainingEmails }}"
+          echo "remainingSMS=${{ steps.check.outputs.remainingSMS }}"
+          echo "thresholdTriggered=${{ steps.check.outputs.thresholdTriggered }}"
+          echo "previousThreshold=${{ steps.check.outputs.previousThreshold }}"
+
+      - name: Notify on threshold change (example)
+        if: ${{ steps.check.outputs.stateChanged == 'true' && steps.check.outputs.thresholdTriggered != 'ok' }}
+        run: |
+          echo "Threshold changed from ${{ steps.check.outputs.previousThreshold }} to ${{ steps.check.outputs.thresholdTriggered }}"
+          echo "Implement notification here (send email, Slack, PagerDuty, etc.)"
+
+      - name: Emergency notifications (example)
+        if: ${{ steps.check.outputs.thresholdTriggered == 'emergency' }}
+        run: |
+          echo "EMERGENCY: take immediate action (escalate)"
+          # Use your preferred notification action here, e.g. send email or call webhook
