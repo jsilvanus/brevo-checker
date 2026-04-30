@@ -1,0 +1,28 @@
+name: Smoke test action bundle
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install
+        run: npm ci
+
+      - name: Build dist
+        run: npm run build
+
+      - name: Run bundled action with sample metric
+        env:
+          INPUT_LOCAL_METRIC_FILE: sample/account.json
+          INPUT_WARNING_PERCENT: 60
+          INPUT_CRITICAL_PERCENT: 80
+          INPUT_EMERGENCY_PERCENT: 90
+          INPUT_STATE_FILE: .alert-state.smoke.json
+        run: node dist/index.js
