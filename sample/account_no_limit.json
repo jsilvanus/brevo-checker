@@ -1,0 +1,10 @@
+{
+  "account": {
+    "plan": "pro",
+    "limits": {
+      "email": {
+        "remaining": 25
+      }
+    }
+  }
+}

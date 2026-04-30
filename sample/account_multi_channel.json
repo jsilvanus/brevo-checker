@@ -1,0 +1,15 @@
+{
+  "account": {
+    "plan": "enterprise",
+    "limits": {
+      "email_service": {
+        "remaining": 40,
+        "limit": 200
+      },
+      "sms_service": {
+        "remaining": 10,
+        "limit": 50
+      }
+    }
+  }
+}
