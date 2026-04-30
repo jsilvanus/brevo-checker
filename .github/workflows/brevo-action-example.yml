@@ -41,3 +41,17 @@ jobs:
         run: |
           echo "EMERGENCY: take immediate action (escalate)"
           # Use your preferred notification action here, e.g. send email or call webhook
+
+      - name: Send Brevo notifications
+        if: ${{ steps.check.outputs.thresholdTriggered != 'ok' }}
+        env:
+          THRESHOLD: ${{ steps.check.outputs.thresholdTriggered }}
+          USAGE_PERCENT: ${{ steps.check.outputs.usagePercent }}
+          REMAINING_EMAILS: ${{ steps.check.outputs.remainingEmails }}
+          REMAINING_SMS: ${{ steps.check.outputs.remainingSMS }}
+          NOTIFY_CONFIG: .github/brevo-notify.json
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+          BREVO_SENDER_NAME: ${{ secrets.BREVO_SENDER_NAME }}
+        run: |
+          node send-alert.js

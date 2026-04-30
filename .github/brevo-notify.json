@@ -1,0 +1,14 @@
+{
+  "warning": {
+    "channels": ["email"],
+    "recipients": ["devops@example.com"]
+  },
+  "critical": {
+    "channels": ["email", "sms"],
+    "recipients": ["devops@example.com", "+15551234567"]
+  },
+  "emergency": {
+    "channels": ["email", "sms"],
+    "recipients": ["oncall@example.com", "+15557654321"]
+  }
+}
