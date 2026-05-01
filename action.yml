@@ -22,16 +22,19 @@ inputs:
   warning_percent:
     description: 'Usage percent to trigger warning (e.g. 70)'
     required: false
+    default: 70
   critical_percent:
     description: 'Usage percent to trigger critical (e.g. 85)'
     required: false
+    default: 85
   emergency_percent:
     description: 'Usage percent to trigger emergency (e.g. 95)'
     required: false
+    default: 95
   state_file:
     description: 'Path to persistent alert state file (written in workspace)'
     required: false
-    default: '.alert-state.json'
+    default: '.github/alert-state.json'
 
 outputs:
   usagePercent:
