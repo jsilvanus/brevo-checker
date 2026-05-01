@@ -1,5 +1,5 @@
 name: Brevo quota checker
-description: Checks Brevo quotas and sends alert emails when thresholds are reached.
+description: Computes Brevo usage metrics and exposes structured outputs for downstream steps. This action is a decision engine only — it does not send notifications.
 author: jsilvanus
 runs:
   using: 'node16'
@@ -11,31 +11,38 @@ inputs:
     required: false
     default: '.github/brevo-checker.json'
   brevo_api_key:
-    description: 'Brevo API key (use with secrets.BREVO_NOTIFY_API_KEY)'
-    required: false
-  alert_email:
-    description: 'Recipient email for alerts'
+    description: 'Brevo API key (prefer storing in secrets as BREVO_NOTIFY_API_KEY)'
     required: false
   metric_json_path:
     description: 'Optional JSON path to numeric metric in account response'
     required: false
   local_metric_file:
-      warning_percent:
-        description: 'Usage percent to trigger warning (e.g. 70)'
-        required: false
-      critical_percent:
-        description: 'Usage percent to trigger critical (e.g. 85)'
-        required: false
-      emergency_percent:
-        description: 'Usage percent to trigger emergency (e.g. 95)'
-        required: false
-      state_file:
-        description: 'Path to persistent alert state file (written in workspace)'
-        required: false
-        default: '.alert-state.json'
     description: 'Local file path for testing (not for production)'
     required: false
+  warning_percent:
+    description: 'Usage percent to trigger warning (e.g. 70)'
+    required: false
+  critical_percent:
+    description: 'Usage percent to trigger critical (e.g. 85)'
+    required: false
+  emergency_percent:
+    description: 'Usage percent to trigger emergency (e.g. 95)'
+    required: false
+  state_file:
+    description: 'Path to persistent alert state file (written in workspace)'
+    required: false
+    default: '.alert-state.json'
 
 outputs:
-  status:
-    description: 'ok | alert | suppressed | error'
+  usagePercent:
+    description: 'Computed usage percent (number)'
+  remainingEmails:
+    description: 'Remaining emails (number or empty)'
+  remainingSMS:
+    description: 'Remaining SMS (number or empty)'
+  thresholdTriggered:
+    description: "Triggered level: ok | warning | critical | emergency"
+  previousThreshold:
+    description: 'Previous persisted threshold level'
+  stateChanged:
+    description: 'true if persisted state changed during this run'
