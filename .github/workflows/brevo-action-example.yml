@@ -34,16 +34,17 @@ jobs:
         if: ${{ steps.check.outputs.stateChanged == 'true' && steps.check.outputs.thresholdTriggered != 'ok' }}
         run: |
           echo "Threshold changed from ${{ steps.check.outputs.previousThreshold }} to ${{ steps.check.outputs.thresholdTriggered }}"
-          echo "Implement notification here (send email, Slack, PagerDuty, etc.)"
 
-      - name: Emergency notifications (example)
-        if: ${{ steps.check.outputs.thresholdTriggered == 'emergency' }}
-        run: |
-          echo "EMERGENCY: take immediate action (escalate)"
-          # Use your preferred notification action here, e.g. send email or call webhook
-
-      - name: Send Brevo notifications (delegated to external repo)
-        if: ${{ steps.check.outputs.thresholdTriggered != 'ok' }}
-        run: |
-          echo "Notifications are delegated to the separate brevo-notifier repository."
-          echo "Install or call that repo's action/script in your caller workflows."
+      - name: Send Brevo notifications (delegated to brevo-notifier)
+        if: ${{ steps.check.outputs.stateChanged == 'true' && steps.check.outputs.thresholdTriggered != 'ok' }}
+        uses: jsilvanus/brevo-notifier@v1
+        with:
+          threshold: ${{ steps.check.outputs.thresholdTriggered }}
+          usagePercent: ${{ steps.check.outputs.usagePercent }}
+          remainingEmails: ${{ steps.check.outputs.remainingEmails }}
+          remainingSMS: ${{ steps.check.outputs.remainingSMS }}
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+          BREVO_SENDER_NAME: ${{ secrets.BREVO_SENDER_NAME }}
+          BREVO_TARGET_EMAIL: ${{ secrets.BREVO_TARGET_EMAIL }}
