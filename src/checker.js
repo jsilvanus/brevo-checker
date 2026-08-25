@@ -1,5 +1,5 @@
 import fs from 'fs/promises'
-import { getByPath, findNumeric, readLastAlert, writeLastAlert } from './lib.js'
+import { getByPath, readLastAlert, writeLastAlert } from './lib.js'
 
 function isNumber(v) { return typeof v === 'number' && Number.isFinite(v) }
 
@@ -20,44 +20,27 @@ function collectObjects(obj) {
 function findChannelStats(account, channel) {
   const objs = collectObjects(account)
   const nameRx = new RegExp(channel, 'i')
-  let foundMatch = false
+
   for (const o of objs) {
     for (const [k, v] of Object.entries(o)) {
-      if (nameRx.test(k) && v && typeof v === 'object') {
-        let remaining = undefined
-        let limit = undefined
-        for (const [kk, vv] of Object.entries(v)) {
-          if (isNumber(vv) && /remaining|left|available|balance/i.test(kk)) remaining = vv
-          if (isNumber(vv) && /limit|total|max|quota|credits/i.test(kk)) limit = vv
-        }
-        if ((remaining == null || limit == null)) {
-          const deeper = collectObjects(v)
-          for (const d of deeper) {
-            for (const [kk, vv] of Object.entries(d)) {
-              if (isNumber(vv) && /remaining|left|available|balance/i.test(kk) && remaining == null) remaining = vv
-              if (isNumber(vv) && /limit|total|max|quota|credits/i.test(kk) && limit == null) limit = vv
-            }
-          }
-        }
-        if (remaining != null || limit != null) return { remaining: remaining ?? null, limit: limit ?? null }
+      if (!nameRx.test(k) || !v || typeof v !== 'object') continue
+      let remaining
+      let limit
+      for (const [kk, vv] of Object.entries(v)) {
+        if (isNumber(vv) && /remaining|left|available/i.test(kk)) remaining = vv
+        if (isNumber(vv) && /limit|total|max|quota/i.test(kk)) limit = vv
       }
+      if (remaining != null || limit != null) return { remaining: remaining ?? null, limit: limit ?? null }
     }
   }
-  // If we found an object whose key matched the channel but could not extract stats,
-  // return nulls rather than falling back to unrelated numbers.
-  if (foundMatch) return { remaining: null, limit: null }
 
-  // For email only: as a fallback, try to find any object that contains numeric remaining/limit.
-  if (channel.toLowerCase() === 'email') {
-    for (const o of objs) {
-      let rem = null, lim = null
-      for (const [k, v] of Object.entries(o)) {
-        if (isNumber(v) && /remaining|left|available|balance/i.test(k)) rem = v
-        if (isNumber(v) && /limit|total|max|quota|credits/i.test(k)) lim = v
-      }
-      if (rem != null || lim != null) return { remaining: rem ?? null, limit: lim ?? null }
-    }
+  // Current /v3/account exposes plan credits, but not a used/total pair.
+  // Keep the remaining credit count for reporting, but never infer usage %.
+  if (Array.isArray(account?.plan)) {
+    const plan = account.plan.find(p => p?.creditsType === 'sendLimit' && (channel !== 'sms' || p.type === 'sms'))
+    if (plan && isNumber(plan.credits)) return { remaining: plan.credits, limit: null }
   }
+
   return { remaining: null, limit: null }
 }
 
@@ -76,9 +59,7 @@ export async function runCheck(options = {}) {
     stateKey = 'default'
   } = options
 
-  if (!brevoApiKey && !localMetricFile) {
-    throw new Error('brevoApiKey is required unless localMetricFile is provided')
-  }
+  if (!brevoApiKey && !localMetricFile) throw new Error('brevoApiKey is required unless localMetricFile is provided')
 
   let account
   if (localMetricFile) {
@@ -95,27 +76,29 @@ export async function runCheck(options = {}) {
 
   const emailStats = findChannelStats(account, 'email')
   const smsStats = findChannelStats(account, 'sms')
+  const remainingEmails = emailStats.remaining
+  const remainingSMS = smsStats.remaining
 
   let usagePercent = null
-  let remainingEmails = emailStats.remaining
-  let remainingSMS = smsStats.remaining
-  if (isNumber(emailStats.limit) && isNumber(emailStats.remaining)) {
-    const used = emailStats.limit - emailStats.remaining
-    usagePercent = (used / emailStats.limit) * 100
-  } else if (isNumber(smsStats.limit) && isNumber(smsStats.remaining)) {
-    const used = smsStats.limit - smsStats.remaining
-    usagePercent = (used / smsStats.limit) * 100
+  if (isNumber(emailStats.limit) && isNumber(emailStats.remaining) && emailStats.limit > 0) {
+    usagePercent = ((emailStats.limit - emailStats.remaining) / emailStats.limit) * 100
+  } else if (isNumber(smsStats.limit) && isNumber(smsStats.remaining) && smsStats.limit > 0) {
+    usagePercent = ((smsStats.limit - smsStats.remaining) / smsStats.limit) * 100
   } else if (metricJsonPath) {
-    let v = undefined
+    let v
     try { v = getByPath(account, metricJsonPath) } catch { v = undefined }
     if (isNumber(v)) usagePercent = v
   }
 
-  usagePercent = usagePercent == null ? 0 : clampPercent(usagePercent)
+  if (!isNumber(usagePercent)) {
+    throw new Error('Unable to determine Brevo usage percentage. Configure metric_json_path or provide quota data containing both remaining and limit values.')
+  }
 
+  usagePercent = clampPercent(usagePercent)
   const warn = clampPercent(warningPercent)
   const crit = clampPercent(criticalPercent)
   const emerg = clampPercent(emergencyPercent)
+  if (!(warn < crit && crit < emerg)) throw new Error(`Thresholds must be strictly increasing: warning=${warn}, critical=${crit}, emergency=${emerg}`)
 
   let level = 'ok'
   if (usagePercent >= emerg) level = 'emergency'
