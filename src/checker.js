@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import { getByPath, readLastAlert, writeLastAlert } from './lib.js'
 
+// Quota parsing is intentionally fail-closed: an unknown quota must never look like 0% usage.
 function isNumber(v) { return typeof v === 'number' && Number.isFinite(v) }
 
 function collectObjects(obj) {
@@ -34,8 +35,6 @@ function findChannelStats(account, channel) {
     }
   }
 
-  // Current /v3/account exposes plan credits, but not a used/total pair.
-  // Keep the remaining credit count for reporting, but never infer usage %.
   if (Array.isArray(account?.plan)) {
     const plan = account.plan.find(p => p?.creditsType === 'sendLimit' && (channel !== 'sms' || p.type === 'sms'))
     if (plan && isNumber(plan.credits)) return { remaining: plan.credits, limit: null }
@@ -90,9 +89,7 @@ export async function runCheck(options = {}) {
     if (isNumber(v)) usagePercent = v
   }
 
-  if (!isNumber(usagePercent)) {
-    throw new Error('Unable to determine Brevo usage percentage. Configure metric_json_path or provide quota data containing both remaining and limit values.')
-  }
+  if (!isNumber(usagePercent)) throw new Error('Unable to determine Brevo usage percentage. Configure metric_json_path or provide quota data containing both remaining and limit values.')
 
   usagePercent = clampPercent(usagePercent)
   const warn = clampPercent(warningPercent)
