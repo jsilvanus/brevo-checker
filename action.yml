@@ -2,7 +2,7 @@ name: Brevo quota checker
 description: Computes Brevo usage metrics and exposes structured outputs for downstream steps. This action is a decision engine only — it does not send notifications.
 author: jsilvanus
 runs:
-  using: 'node16'
+  using: 'node24'
   main: 'dist/index.js'
 
 inputs:
