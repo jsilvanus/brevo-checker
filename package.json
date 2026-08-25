@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Brevo quota checker and GitHub Action",
   "main": "src/action.js",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "test": "node --test",
     "check": "node src/checker.js",
