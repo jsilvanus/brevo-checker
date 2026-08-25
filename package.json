@@ -1,42 +1,22 @@
 {
   "name": "brevo-checker",
-  "version": "0.0.1",
-  "description": "An email and SMS limit checker and notifier for Brevo",
-  "keywords": [
-    "brevo",
-    "email",
-    "sms",
-    "limits",
-    "notifications"
-  ],
-  "homepage": "https://github.com/jsilvanus/brevo-checker#readme",
-  "bugs": {
-    "url": "https://github.com/jsilvanus/brevo-checker/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jsilvanus/brevo-checker.git"
-  },
-  "license": "ISC",
-  "author": "Juha Itäleino <jsilvanus@gmail.com>",
-  "private": true,
-  "engines": {
-    "node": ">=22"
-  },
-  "type": "module",
-  "main": "index.js",
+  "version": "1.0.0",
+  "description": "Brevo quota checker and GitHub Action",
+  "main": "src/action.js",
+  "type": "commonjs",
   "scripts": {
-    "check": "node src/checkQuota.js",
     "test": "node --test",
-    "build": "ncc build src/action.js -o dist",
-    "prepare": "npm run build"
+    "check": "node src/checker.js",
+    "build": "ncc build src/action.js --license licenses.txt -o dist"
   },
   "dependencies": {
-    "@getbrevo/brevo": "^5.0.4",
-    "@actions/core": "^1.10.0"
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.1"
   },
   "devDependencies": {
-    "dotenv": "^16.0.3",
-    "@vercel/ncc": "^0.36.1"
+    "@vercel/ncc": "^0.38.3"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }
